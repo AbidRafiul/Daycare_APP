@@ -1,4 +1,4 @@
-package com.namaapp.daycare.data.local.entities
+package com.klmpk5.daycare_app.data.local.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

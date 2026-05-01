@@ -1,7 +1,7 @@
-package com.namaapp.daycare.data.local.dao
+package com.klmpk5.daycare_app.data.local.dao
 
 import androidx.room.*
-import com.namaapp.daycare.data.local.entities.Child
+import com.klmpk5.daycare_app.data.local.entities.Child
 import kotlinx.coroutines.flow.Flow
 
 @Dao
