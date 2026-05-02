@@ -1,60 +1,67 @@
 package com.klmpk5.daycare_app.repository
 
-
-
 import com.klmpk5.daycare_app.data.local.dao.ChildDao
+import com.klmpk5.daycare_app.data.remote.firebase.FirebaseService
 import com.klmpk5.daycare_app.data.local.entities.Child
-import com.klmpk5.daycare_app.data.remote.datasource.ChildRemoteDataSource
-import com.klmpk5.daycare_app.data.remote.model.ChildRemoteDto
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 
 class ChildRepository(
     private val childDao: ChildDao,
-    private val remoteDataSource: ChildRemoteDataSource
+    private val firebaseService: FirebaseService
 ) {
-
-    // Mendapatkan data anak dari Room
-    fun getAllChildren(): Flow<List<Child>> {
+    // 1. MEMBACA DATA LOKAL (Digunakan oleh UI/ViewModel untuk ditampilkan ke layar)
+    fun getAllChildrenLocal(): Flow<List<Child>> {
         return childDao.getAllChildren()
     }
 
-    // Menambahkan data anak ke Room dan Firebase
-    suspend fun insertChild(child: Child) {
-        // Menyimpan data ke Room terlebih dahulu
-        childDao.insertChild(child)
+    // 2. SINKRONISASI DARI FIREBASE KE ROOM (Biasanya dipanggil saat pull-to-refresh / buka aplikasi)
+    suspend fun syncChildrenFromRemote(parentUserId: String) {
+        withContext(Dispatchers.IO) { // Jalankan di background thread
+            try {
+                // Ambil data dari Firebase
+                val remoteChildren = firebaseService.getChildrenByParent(parentUserId)
 
-        // Mengkonversi data Child menjadi DTO untuk Firebase
-        val childDto = ChildRemoteDto(
-            fullName = child.fullName,
-            birthDate = child.birthDate,
-            gender = child.gender,
-            parentUserId = child.parentUserId
-        )
+                // Convert DTO ke Room Entity (Perhatikan: fungsi toEntity() dipanggil di sini!)
+                val localChildren = remoteChildren.map { it.toEntity() }
 
-        // Menyimpan data ke Firebase
-        remoteDataSource.addChild(childDto)
-    }
-
-    // Sinkronisasi data dari Room ke Firebase
-    suspend fun syncChildrenToFirebase(children: List<Child>) {
-        val childrenDto = children.map {
-            ChildRemoteDto(
-                fullName = it.fullName,
-                birthDate = it.birthDate,
-                gender = it.gender,
-                parentUserId = it.parentUserId
-            )
+                // Simpan ke Room Database
+                localChildren.forEach { child ->
+                    childDao.insertChild(child)
+                }
+            } catch (e: Exception) {
+                // Tangkap error jika internet mati atau akses ditolak
+                e.printStackTrace()
+            }
         }
-        remoteDataSource.syncChildrenToFirebase(childrenDto)
     }
 
-    // Mendapatkan data anak dari Firebase dan menyimpannya ke Room
-    suspend fun getChildrenFromFirebase(parentUserId: String) {
-        val remoteChildren = remoteDataSource.getChildrenByParent(parentUserId)
+    // 3. MENAMBAH ANAK BARU (Khusus Admin)
+    suspend fun addChild(childEntity: Child) {
+        withContext(Dispatchers.IO) {
+            try {
+                // Simpan ke Room dulu agar UI langsung update (Optimistic UI)
+                childDao.insertChild(childEntity)
 
-        // Menyimpan data Firebase ke Room
-        remoteChildren.forEach {
-            childDao.insertChild(it.toEntity()) // Memanggil toEntity() dari ChildRemoteDto
+                // Konversi dari Room Entity ke Firebase DTO secara manual
+                val remoteDto = com.klmpk5.daycare_app.data.remote.model.ChildRemoteDto(
+                    childId = childEntity.childId,
+                    fullName = childEntity.fullName,
+                    birthDate = childEntity.birthDate,
+                    gender = childEntity.gender,
+                    parentUserId = childEntity.parentUserId,
+                    photoUrl = childEntity.photoUrl,
+                    isActive = childEntity.isActive,
+                    createdAt = childEntity.createdAt,
+                    updatedAt = childEntity.updatedAt
+                )
+
+                // Lempar ke Firebase
+                firebaseService.addChild(remoteDto)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }
