@@ -1,7 +1,6 @@
 package com.klmpk5.daycare_app.data.remote.firebase
 
 import com.google.firebase.firestore.FirebaseFirestore
-import com.klmpk5.daycare_app.data.local.entities.Child
 import com.klmpk5.daycare_app.data.remote.model.ChildRemoteDto
 import kotlinx.coroutines.tasks.await
 
@@ -15,7 +14,7 @@ class FirebaseService {
             .await()
     }
 
-    // Mendapatkan Child berdasarkan parentUserId
+    // Mendapatkan Children berdasarkan parentUserId
     suspend fun getChildrenByParent(parentUserId: String): List<ChildRemoteDto> {
         val querySnapshot = db.collection("children")
             .whereEqualTo("parentUserId", parentUserId)
