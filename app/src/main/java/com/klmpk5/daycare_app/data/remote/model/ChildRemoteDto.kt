@@ -1,9 +1,9 @@
 package com.klmpk5.daycare_app.data.remote.model
 
-
 import com.klmpk5.daycare_app.data.local.entities.Child
 
 data class ChildRemoteDto(
+    var childId: String = "", // WAJIB ADA: ID Unik dari Firebase
     val fullName: String = "",
     val birthDate: String = "",
     val gender: String = "",
@@ -16,6 +16,7 @@ data class ChildRemoteDto(
     // Fungsi untuk mengonversi ChildRemoteDto menjadi Child (Entity Room)
     fun toEntity(): Child {
         return Child(
+            childId = this.childId, // Masukkan ke dalam mapping
             fullName = this.fullName,
             birthDate = this.birthDate,
             gender = this.gender,
