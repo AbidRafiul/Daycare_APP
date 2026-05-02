@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "911994232553",
+    "project_id": "daycareapp-3c327",
+    "storage_bucket": "daycareapp-3c327.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:911994232553:android:c665340731384e4d871a78",
+        "android_client_info": {
+          "package_name": "com.klmpk5.daycare_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOb_-5-XC99JsrUU5azvHaH5hwwIEQ1Ww"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
