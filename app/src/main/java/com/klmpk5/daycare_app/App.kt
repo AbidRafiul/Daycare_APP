@@ -3,10 +3,44 @@ package com.klmpk5.daycare_app
 import android.app.Application
 import androidx.room.Room
 import com.klmpk5.daycare_app.data.local.db.DaycareDatabase
+import com.klmpk5.daycare_app.data.remote.firebase.FirebaseService
+import com.klmpk5.daycare_app.repository.ChildRepository
+import com.klmpk5.daycare_app.repository.ScoreRepository
+import com.klmpk5.daycare_app.repository.WeeklyPlanRepository
 
 class App : Application() {
 
-    val database: DaycareDatabase by lazy {
-        Room.databaseBuilder(applicationContext, DaycareDatabase::class.java, "daycare_db").build()
+    // 1. Deklarasi Database & Service
+    lateinit var database: DaycareDatabase
+        private set
+
+    lateinit var firebaseService: FirebaseService
+        private set
+
+    // 2. Deklarasi Repositories
+    lateinit var childRepository: ChildRepository
+        private set
+    lateinit var weeklyPlanRepository: WeeklyPlanRepository
+        private set
+    lateinit var scoreRepository: ScoreRepository
+        private set
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // Inisialisasi Room Database (hanya dibuat 1x saat aplikasi jalan)
+        database = Room.databaseBuilder(
+            applicationContext,
+            DaycareDatabase::class.java,
+            "daycare_database"
+        ).build()
+
+        // Inisialisasi Firebase Service
+        firebaseService = FirebaseService()
+
+        // Inisialisasi semua Repositories dengan memasukkan DAO dan FirebaseService
+        childRepository = ChildRepository(database.childDao(), firebaseService)
+        weeklyPlanRepository = WeeklyPlanRepository(database.weeklyPlanDao(), firebaseService)
+        scoreRepository = ScoreRepository(database.scoreDao(), firebaseService)
     }
 }
