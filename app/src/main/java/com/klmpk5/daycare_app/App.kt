@@ -2,7 +2,7 @@ package com.klmpk5.daycare_app
 
 import android.app.Application
 import androidx.room.Room
-import com.namaapp.daycare.data.local.db.DaycareDatabase
+import com.klmpk5.daycare_app.data.local.db.DaycareDatabase
 
 class App : Application() {
 

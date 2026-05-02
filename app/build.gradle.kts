@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.android)
 }
 
 
@@ -37,6 +38,9 @@ android {
     buildFeatures {
         compose = true
         viewBinding = true     // tambahan jika pakai ViewBinding
+    }
+    kotlinOptions {
+        jvmTarget = "11"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

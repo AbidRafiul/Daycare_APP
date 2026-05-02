@@ -49,7 +49,7 @@ class ChildRepositoryTest {
     }
 
     @Test
-    fun testDeleteChild() = runBlocking {   // ← tambah runBlocking
+    fun testDeleteChild() = runBlocking {
         val child = Child(
             fullName = "Jane Doe",
             birthDate = "02/02/2016",
@@ -57,10 +57,17 @@ class ChildRepositoryTest {
             parentUserId = "parent456"
         )
 
+        // Insert dulu
         repository.insertChild(child)
-        repository.deleteChild(child)
 
-        // getOrAwaitValue() diganti .first()
+        // Ambil dari database agar dapat id yang benar
+        val inserted = repository.getAllChildren().first()
+        assertEquals(1, inserted.size) // pastikan sudah ter-insert
+
+        // Hapus menggunakan object dari database (bukan object lama)
+        repository.deleteChild(inserted[0])
+
+        // Cek sudah kosong
         val children = repository.getAllChildren().first()
         assertTrue(children.isEmpty())
     }
