@@ -1,52 +1,107 @@
 package com.klmpk5.daycare_app.viewModel
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
-import com.klmpk5.daycare_app.data.local.entities.Child
-import com.klmpk5.daycare_app.repository.ChildRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
+import com.google.firebase.firestore.FirebaseFirestore
 
-class ChildViewModel(
-    private val childRepository: ChildRepository
-) : ViewModel() {
+data class ChildFireData(
+    val childId: String = "",
+    val fullName: String = "",
+    val gender: String = "",
+    val birthDate: String = "",
+    val parentUserId: String = ""
+)
 
-    // Simple Flow dari Room, otomatis memantau perubahan data lokal
-    val children: Flow<List<Child>> = childRepository.getAllChildrenLocal()
+data class WeeklyFirePlan(
+    val planId: String = "",
+    val description: String = "",
+    val startDate: String = "",
+    val endDate: String = "",
+    val imageUrl: String? = null,
+    val childId: String = ""
+)
 
-    // BLOK INIT: Otomatis dipanggil 1x saat MainActivity membuka ViewModel ini
-    init {
-        // Kita panggil fungsi sinkronisasi secara background
-        viewModelScope.launch {
-            // Gunakan ID "PARENT_999" yang kemarin kita pakai saat testing agar ada datanya
-            // Nanti, ID ini bisa diganti dinamis sesuai siapa yang sedang Login
-            syncChildren("PARENT_999")
-        }
+data class DailyFireScore(
+    val scoreId: String = "",
+    val childId: String = "",
+    val activityName: String = "",
+    val date: String = "",
+    val score: String = "",
+    val notes: String = ""
+)
+
+class ChildViewModel : ViewModel() {
+    private val db = FirebaseFirestore.getInstance()
+
+    var childData by mutableStateOf<ChildFireData?>(null)
+        private set
+    var weeklyPlan by mutableStateOf<WeeklyFirePlan?>(null)
+        private set
+    var dailyScore by mutableStateOf<DailyFireScore?>(null)
+        private set
+
+    var isLoading by mutableStateOf(false)
+        private set
+    var errorMessage by mutableStateOf("")
+        private set
+
+    fun getFullChildData(parentUid: String) {
+        isLoading = true
+        errorMessage = ""
+
+        db.collection("children")
+            .whereEqualTo("parentUserId", parentUid)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { result ->
+                if (!result.isEmpty) {
+                    val child = result.documents[0].toObject(ChildFireData::class.java)
+                    childData = child
+
+                    if (child != null && child.childId.isNotEmpty()) {
+                        fetchWeeklyPlan(child.childId)
+                        fetchDailyScore(child.childId)
+                    } else {
+                        isLoading = false
+                    }
+                } else {
+                    isLoading = false
+                    errorMessage = "Belum ada data anak untuk akun ini."
+                }
+            }
+            .addOnFailureListener { e ->
+                isLoading = false
+                errorMessage = "Gagal mengambil data: ${e.message}"
+            }
     }
 
-    // Fungsi suspend untuk menarik data (Dipanggil oleh init atau tombol Refresh)
-    suspend fun syncChildren(parentUserId: String) {
-        childRepository.syncChildrenFromRemote(parentUserId)
+    private fun fetchWeeklyPlan(childId: String) {
+        db.collection("weekly_plans")
+            .whereEqualTo("childId", childId)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { result ->
+                if (!result.isEmpty) {
+                    weeklyPlan = result.documents[0].toObject(WeeklyFirePlan::class.java)
+                }
+            }
     }
 
-    // Mengubah fungsi ini agar langsung menggunakan viewModelScope,
-    // sehingga tim UI tinggal panggil viewModel.addChild(data) tanpa pusing mikirin thread
-    fun addChild(child: Child) {
-        viewModelScope.launch {
-            childRepository.addChild(child)
-        }
-    }
-}
-
-class ChildViewModelFactory(
-    private val childRepository: ChildRepository
-) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(ChildViewModel::class.java)) {
-            return ChildViewModel(childRepository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+    private fun fetchDailyScore(childId: String) {
+        db.collection("daily_scores")
+            .whereEqualTo("childId", childId)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { result ->
+                if (!result.isEmpty) {
+                    dailyScore = result.documents[0].toObject(DailyFireScore::class.java)
+                }
+                isLoading = false
+            }
+            .addOnFailureListener {
+                isLoading = false
+            }
     }
 }
