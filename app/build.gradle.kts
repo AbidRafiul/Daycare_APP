@@ -42,10 +42,10 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
+//    compileOptions {
+//        sourceCompatibility = JavaVersion.VERSION_11
+//        targetCompatibility = JavaVersion.VERSION_11
+//    }
 }
 
 dependencies {
@@ -69,6 +69,8 @@ dependencies {
     // Lifecycle ViewModel & LiveData
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
+
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
