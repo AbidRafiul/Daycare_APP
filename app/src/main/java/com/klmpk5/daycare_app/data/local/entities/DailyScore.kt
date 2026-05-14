@@ -5,10 +5,10 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "daily_score_table")
 data class DailyScore(
-    @PrimaryKey val scoreId: String,
-    val childId: String,
-    val date: String,
-    val activityName: String,
-    val score: String,
-    val notes: String
+    @PrimaryKey val scoreId: String = "",
+    val childId: String = "",
+    val date: String = "",
+    val activityName: String = "",
+    val score: String = "",
+    val notes: String = ""
 )
