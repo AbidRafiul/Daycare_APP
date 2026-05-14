@@ -11,7 +11,6 @@ import androidx.lifecycle.ViewModelProvider
 import com.klmpk5.daycare_app.ui.ChildDetailScreen
 import com.klmpk5.daycare_app.ui.LoginScreen
 import com.klmpk5.daycare_app.ui.theme.DaycareAppTheme
-import com.klmpk5.daycare_app.viewModel.ChildViewModel
 import com.klmpk5.daycare_app.viewModel.LoginViewModel
 
 class MainActivity : ComponentActivity() {
@@ -20,7 +19,6 @@ class MainActivity : ComponentActivity() {
 
         // Panggil kedua ViewModel dengan cara standar
         val loginViewModel = ViewModelProvider(this)[LoginViewModel::class.java]
-        val childViewModel = ViewModelProvider(this)[ChildViewModel::class.java]
 
         setContent {
             DaycareAppTheme {
@@ -40,7 +38,6 @@ class MainActivity : ComponentActivity() {
                     "detail" -> {
                         ChildDetailScreen(
                             parentUid = parentUidFromLogin,
-                            viewModel = childViewModel,
                             onBackClick = {
                                 loginViewModel.resetState()
                                 currentScreen = "login"

@@ -1,113 +1,184 @@
 package com.klmpk5.daycare_app.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.klmpk5.daycare_app.viewModel.ChildViewModel
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.klmpk5.daycare_app.viewModel.ChildProfileViewModel
+import com.klmpk5.daycare_app.viewModel.DailyScoreViewModel
+import com.klmpk5.daycare_app.viewModel.WeeklyPlanViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChildDetailScreen(
     parentUid: String,
-    viewModel: ChildViewModel,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    profileViewModel: ChildProfileViewModel = viewModel(),
+    weeklyViewModel: WeeklyPlanViewModel = viewModel(),
+    scoreViewModel: DailyScoreViewModel = viewModel()
 ) {
+    val childData by profileViewModel.childData
+    val isProfileLoading by profileViewModel.isLoading
+
+    val weeklyPlans by weeklyViewModel.weeklyPlans
+    val isWeeklyLoading by weeklyViewModel.isLoading
+
+    val dailyScores by scoreViewModel.dailyScores
+    val isScoreLoading by scoreViewModel.isLoading
+
     LaunchedEffect(parentUid) {
-        viewModel.getFullChildData(parentUid)
+        profileViewModel.loadProfileByParent(parentUid)
     }
 
-    val child = viewModel.childData
-    val plan = viewModel.weeklyPlan
-    val score = viewModel.dailyScore
-
-    val isLoading = viewModel.isLoading
-    val error = viewModel.errorMessage
+    LaunchedEffect(childData?.childId) {
+        childData?.childId?.let { id ->
+            if (id.isNotEmpty()) {
+                weeklyViewModel.loadWeeklyPlans(id)
+                scoreViewModel.loadDailyScores(id)
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dashboard Anak") },
+                title = { Text("Dashboard Anak", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF121212))
             )
-        }
+        },
+        containerColor = Color(0xFF121212)
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.padding(top = 32.dp))
-                Text("Menarik data dari server...")
-            } else if (error.isNotEmpty()) {
-                Text(text = error, color = MaterialTheme.colorScheme.error)
-            } else if (child != null) {
-                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+        if (isProfileLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // --- KARTU PROFIL ANAK ---
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
+                        shape = RoundedCornerShape(16.dp)
                     ) {
-                        Icon(Icons.Default.Person, contentDescription = "Foto", modifier = Modifier.size(64.dp))
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(text = child.fullName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                            Text(text = "${child.gender} | Lahir: ${child.birthDate}", style = MaterialTheme.typography.bodyMedium)
-                            Text(text = "ID: ${child.childId}", style = MaterialTheme.typography.labelSmall)
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Gray),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(childData?.fullName ?: "Nama tidak ditemukan", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text("${childData?.gender ?: "-"} | Lahir: ${childData?.birthDate ?: "-"}", color = Color.LightGray, fontSize = 12.sp)
+                                Text("ID: ${childData?.childId ?: "-"}", color = Color.Gray, fontSize = 12.sp)
+                            }
                         }
                     }
                 }
 
-                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(text = "Weekly Plan", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                        if (plan != null) {
-                            Text(text = "Tema: ${plan.description}", fontWeight = FontWeight.Bold)
-                            Text(text = "Periode: ${plan.startDate} s/d ${plan.endDate}", style = MaterialTheme.typography.bodyMedium)
+                // --- SECTION WEEKLY PLAN ---
+                item {
+                    SectionCard(title = "Weekly Plan") {
+                        if (isWeeklyLoading) {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = Color.White)
+                        } else if (weeklyPlans.isEmpty()) {
+                            Text("Belum ada rencana mingguan.", color = Color.Gray, fontSize = 14.sp)
                         } else {
-                            Text("Belum ada rencana mingguan.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
+                            weeklyPlans.forEachIndexed { index, plan ->
+                                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                                    Text("Tema: ${plan.description}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("Periode: ${plan.startDate} s/d ${plan.endDate}", color = Color.LightGray, fontSize = 14.sp)
+
+                                    // Beri garis pembatas kalau datanya lebih dari 1
+                                    if (index < weeklyPlans.size - 1) {
+                                        Divider(modifier = Modifier.padding(top = 12.dp, bottom = 4.dp), color = Color(0xFF333333))
+                                    }
+                                }
+                            }
                         }
                     }
                 }
 
-                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(text = "Nilai Harian", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                        if (score != null) {
-                            Text(text = "Tanggal: ${score.date}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(text = "Aktivitas: ${score.activityName}", fontWeight = FontWeight.Bold)
-                            Text(text = "Nilai: ${score.score}", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = "Catatan Guru:", fontWeight = FontWeight.Bold)
-                            Text(text = score.notes, style = MaterialTheme.typography.bodyMedium)
+                // --- SECTION NILAI HARIAN ---
+                item {
+                    SectionCard(title = "Nilai Harian") {
+                        if (isScoreLoading) {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = Color.White)
+                        } else if (dailyScores.isEmpty()) {
+                            Text("Belum ada nilai harian untuk hari ini.", color = Color.Gray, fontSize = 14.sp)
                         } else {
-                            Text("Belum ada nilai harian untuk hari ini.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
+                            dailyScores.forEachIndexed { index, score ->
+                                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                    Text("Tanggal: ${score.date}", color = Color.Gray, fontSize = 12.sp)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("Aktivitas: ${score.activityName}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    // Warna ungu untuk Nilai sesuai screenshot
+                                    Text("Nilai: ${score.score}", color = Color(0xFFB39DDB), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text("Catatan Guru:", color = Color.LightGray, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Text(score.notes, color = Color.Gray, fontSize = 14.sp)
+
+                                    // Beri garis pembatas kalau datanya lebih dari 1
+                                    if (index < dailyScores.size - 1) {
+                                        Divider(modifier = Modifier.padding(top = 12.dp, bottom = 4.dp), color = Color(0xFF333333))
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun SectionCard(title: String, content: @Composable () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFF333333))
+            content()
         }
     }
 }
