@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -42,6 +40,9 @@ import androidx.compose.ui.unit.sp
 import com.klmpk5.daycare_app.data.local.entities.Child
 import com.klmpk5.daycare_app.data.local.entities.DailyScore
 import com.klmpk5.daycare_app.data.local.entities.WeeklyPlan
+import com.klmpk5.daycare_app.ui.profile.EditProfilePage
+import com.klmpk5.daycare_app.ui.profile.ProfilePage
+import com.klmpk5.daycare_app.ui.profile.UbahPasswordPage
 import com.klmpk5.daycare_app.ui.theme.DaycareAccent
 import com.klmpk5.daycare_app.ui.theme.DaycareAccentLight
 import com.klmpk5.daycare_app.ui.theme.DaycareBackground
@@ -52,6 +53,13 @@ import com.klmpk5.daycare_app.ui.theme.DaycarePrimaryLight
 import com.klmpk5.daycare_app.ui.theme.DaycareTextMuted
 import com.klmpk5.daycare_app.ui.theme.DaycareTextPrimary
 import com.klmpk5.daycare_app.ui.theme.DaycareTextSecondary
+import com.klmpk5.daycare_app.viewModel.ProfileViewModel
+
+private enum class ProfileRoute {
+    Main,
+    Edit,
+    Password
+}
 
 private data class ChatPreview(
     val sender: String,
@@ -68,9 +76,11 @@ private data class ClassActivity(
 @Composable
 fun DashboardScreen(
     parentEmail: String,
+    profileViewModel: ProfileViewModel,
     onLogout: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(DashboardTab.Home) }
+    var profileRoute by remember { mutableStateOf(ProfileRoute.Main) }
     val child = remember { dummyChild(parentEmail) }
     val weeklyPlans = remember { dummyWeeklyPlans(child.childId) }
     val scores = remember { dummyDailyScores(child.childId) }
@@ -83,7 +93,10 @@ fun DashboardScreen(
         bottomBar = {
             DashboardBottomNavigation(
                 selectedTab = selectedTab,
-                onTabSelected = { selectedTab = it }
+                onTabSelected = {
+                    selectedTab = it
+                    profileRoute = ProfileRoute.Main
+                }
             )
         }
     ) { innerPadding ->
@@ -118,9 +131,12 @@ fun DashboardScreen(
             )
 
             DashboardTab.Profile -> ProfileContent(
-                parentEmail = parentEmail,
-                child = child,
+                profileRoute = profileRoute,
+                profileViewModel = profileViewModel,
                 contentPadding = innerPadding,
+                onEditProfileClick = { profileRoute = ProfileRoute.Edit },
+                onChangePasswordClick = { profileRoute = ProfileRoute.Password },
+                onBackToProfile = { profileRoute = ProfileRoute.Main },
                 onLogout = onLogout
             )
         }
@@ -434,34 +450,34 @@ private fun ClassContent(
 
 @Composable
 private fun ProfileContent(
-    parentEmail: String,
-    child: Child,
+    profileRoute: ProfileRoute,
+    profileViewModel: ProfileViewModel,
     contentPadding: PaddingValues,
+    onEditProfileClick: () -> Unit,
+    onChangePasswordClick: () -> Unit,
+    onBackToProfile: () -> Unit,
     onLogout: () -> Unit
 ) {
-    SimplePage(
-        title = "Profile",
-        subtitle = "Informasi akun wali murid",
-        contentPadding = contentPadding
-    ) {
-        DashboardCard {
-            ProfileRow(label = "Email", value = parentEmail.ifBlank { "parent@email.com" })
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = DaycareBorder)
-            ProfileRow(label = "Role", value = "Parent")
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = DaycareBorder)
-            ProfileRow(label = "Anak", value = child.fullName)
-        }
+    when (profileRoute) {
+        ProfileRoute.Main -> ProfilePage(
+            profileViewModel = profileViewModel,
+            contentPadding = contentPadding,
+            onEditProfileClick = onEditProfileClick,
+            onChangePasswordClick = onChangePasswordClick,
+            onLogoutSuccess = onLogout
+        )
 
-        Button(
-            onClick = onLogout,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = DaycarePrimary)
-        ) {
-            Text("Keluar", color = Color.White, fontWeight = FontWeight.Bold)
-        }
+        ProfileRoute.Edit -> EditProfilePage(
+            profileViewModel = profileViewModel,
+            contentPadding = contentPadding,
+            onBack = onBackToProfile
+        )
+
+        ProfileRoute.Password -> UbahPasswordPage(
+            profileViewModel = profileViewModel,
+            contentPadding = contentPadding,
+            onBack = onBackToProfile
+        )
     }
 }
 
@@ -569,17 +585,6 @@ private fun ScoreRow(score: DailyScore) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(score.date, color = DaycareTextSecondary, fontSize = 12.sp)
         }
-    }
-}
-
-@Composable
-private fun ProfileRow(
-    label: String,
-    value: String
-) {
-    Row {
-        Text(label, color = DaycareTextSecondary, fontSize = 14.sp, modifier = Modifier.weight(1f))
-        Text(value, color = DaycareTextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 

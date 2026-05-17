@@ -10,6 +10,7 @@ import com.klmpk5.daycare_app.ui.dashboard.DashboardScreen
 import com.klmpk5.daycare_app.ui.login.ParentLoginScreen
 import com.klmpk5.daycare_app.ui.register.ParentRegisterScreen
 import com.klmpk5.daycare_app.viewModel.LoginViewModel
+import com.klmpk5.daycare_app.viewModel.ProfileViewModel
 
 private enum class AppRoute {
     Login,
@@ -19,7 +20,8 @@ private enum class AppRoute {
 
 @Composable
 fun AppNavigation(
-    loginViewModel: LoginViewModel
+    loginViewModel: LoginViewModel,
+    profileViewModel: ProfileViewModel
 ) {
     var currentRoute by remember { mutableStateOf(AppRoute.Login) }
     var parentEmailFromLogin by remember { mutableStateOf("") }
@@ -71,6 +73,7 @@ fun AppNavigation(
 
         AppRoute.Dashboard -> DashboardScreen(
             parentEmail = parentEmailFromLogin,
+            profileViewModel = profileViewModel,
             onLogout = {
                 loginViewModel.resetState()
                 currentRoute = AppRoute.Login
