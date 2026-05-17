@@ -7,6 +7,7 @@ import com.klmpk5.daycare_app.data.remote.firebase.FirebaseService
 import com.klmpk5.daycare_app.repository.ChildRepository
 import com.klmpk5.daycare_app.repository.ScoreRepository
 import com.klmpk5.daycare_app.repository.WeeklyPlanRepository
+import com.klmpk5.daycare_app.repository.UserRepository
 
 class App : Application() {
 
@@ -24,6 +25,8 @@ class App : Application() {
         private set
     lateinit var scoreRepository: ScoreRepository
         private set
+    lateinit var userRepository: UserRepository
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -33,7 +36,9 @@ class App : Application() {
             applicationContext,
             DaycareDatabase::class.java,
             "daycare_database"
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
 
         // Inisialisasi Firebase Service
         firebaseService = FirebaseService()
@@ -42,5 +47,6 @@ class App : Application() {
         childRepository = ChildRepository(database.childDao(), firebaseService)
         weeklyPlanRepository = WeeklyPlanRepository(database.weeklyPlanDao(), firebaseService)
         scoreRepository = ScoreRepository(database.scoreDao(), firebaseService)
+        userRepository = UserRepository(database.userDao(), firebaseService)
     }
 }

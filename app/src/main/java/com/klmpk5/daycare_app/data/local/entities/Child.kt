@@ -12,6 +12,7 @@ data class Child(
     val birthDate: String = "",
     val gender: String = "",
     val parentUserId: String = "",
+    val parentEmail: String? = null,
     val photoUrl: String? = null,
     val isActive: Boolean = true,
     val createdAt: Long = System.currentTimeMillis(),

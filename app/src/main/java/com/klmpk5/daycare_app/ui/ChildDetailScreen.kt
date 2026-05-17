@@ -26,6 +26,7 @@ import com.klmpk5.daycare_app.viewModel.WeeklyPlanViewModel
 @Composable
 fun ChildDetailScreen(
     parentUid: String,
+    parentEmail: String? = null,
     onBackClick: () -> Unit,
     profileViewModel: ChildProfileViewModel = viewModel(),
     weeklyViewModel: WeeklyPlanViewModel = viewModel(),
@@ -41,7 +42,7 @@ fun ChildDetailScreen(
     val isScoreLoading by scoreViewModel.isLoading
 
     LaunchedEffect(parentUid) {
-        profileViewModel.loadProfileByParent(parentUid)
+        profileViewModel.loadProfileByParent(parentUid, parentEmail)
     }
 
     LaunchedEffect(childData?.childId) {
