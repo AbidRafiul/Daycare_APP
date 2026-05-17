@@ -63,6 +63,7 @@ import com.klmpk5.daycare_app.ui.theme.DaycareTextSecondary
 fun ParentRegisterScreen(
     isLoading: Boolean = false,
     errorMessage: String? = null,
+    successMessage: String? = null,
     onRegisterClick: (
         fullName: String,
         email: String,
@@ -225,6 +226,17 @@ fun ParentRegisterScreen(
                         Text(
                             text = errorMessage,
                             color = Color(0xFFB91C1C),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    if (!successMessage.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Text(
+                            text = successMessage,
+                            color = DaycarePrimary,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold
                         )
