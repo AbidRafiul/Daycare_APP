@@ -17,11 +17,11 @@ class ChildRepository(
     }
 
     // 2. SINKRONISASI DARI FIREBASE KE ROOM (Biasanya dipanggil saat pull-to-refresh / buka aplikasi)
-    suspend fun syncChildrenFromRemote(parentUserId: String) {
+    suspend fun syncChildrenFromRemote(parentUserId: String, parentEmail: String? = null) {
         withContext(Dispatchers.IO) { // Jalankan di background thread
             try {
                 // Ambil data dari Firebase
-                val remoteChildren = firebaseService.getChildrenByParent(parentUserId)
+                val remoteChildren = firebaseService.getChildrenForParent(parentUserId, parentEmail)
 
                 // Convert DTO ke Room Entity (Perhatikan: fungsi toEntity() dipanggil di sini!)
                 val localChildren = remoteChildren.map { it.toEntity() }
@@ -51,6 +51,7 @@ class ChildRepository(
                     birthDate = childEntity.birthDate,
                     gender = childEntity.gender,
                     parentUserId = childEntity.parentUserId,
+                    parentEmail = childEntity.parentEmail,
                     photoUrl = childEntity.photoUrl,
                     isActive = childEntity.isActive,
                     createdAt = childEntity.createdAt,

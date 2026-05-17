@@ -9,7 +9,7 @@ class ChildProfileViewModel : ViewModel() {
     var childData = mutableStateOf<Child?>(null) // Sesuaikan nama model datamu
     var isLoading = mutableStateOf(true)
 
-    fun loadProfileByParent(parentUid: String) {
+    fun loadProfileByParent(parentUid: String, parentEmail: String? = null) {
         isLoading.value = true
         val db = FirebaseFirestore.getInstance() // Jangan lupa import
 
@@ -18,17 +18,45 @@ class ChildProfileViewModel : ViewModel() {
             .get()
             .addOnSuccessListener { documents ->
                 if (!documents.isEmpty) {
-                    // Ambil dokumen pertama dan ubah jadi model Child
-                    val child = documents.documents[0].toObject(Child::class.java)
+                    val doc = documents.documents[0]
+                    val child = doc.toObject(Child::class.java)?.withDocumentId(doc.id)
                     childData.value = child
+                    isLoading.value = false
                 } else {
-                    childData.value = null // Kalau datanya kosong
+                    loadProfileByParentEmail(db, parentEmail)
                 }
-                isLoading.value = false // MATIKAN LOADING SAAT SUKSES
             }
             .addOnFailureListener { exception ->
                 // Tulis log error di sini kalau mau
                 isLoading.value = false // MATIKAN LOADING SAAT GAGAL/ERROR
             }
+    }
+
+    private fun loadProfileByParentEmail(db: FirebaseFirestore, parentEmail: String?) {
+        val normalizedEmail = parentEmail?.trim()?.lowercase()
+
+        if (normalizedEmail.isNullOrBlank()) {
+            childData.value = null
+            isLoading.value = false
+            return
+        }
+
+        db.collection("children")
+            .whereEqualTo("parentEmail", normalizedEmail)
+            .get()
+            .addOnSuccessListener { documents ->
+                childData.value = documents.documents.firstOrNull()?.let { doc ->
+                    doc.toObject(Child::class.java)?.withDocumentId(doc.id)
+                }
+                isLoading.value = false
+            }
+            .addOnFailureListener {
+                childData.value = null
+                isLoading.value = false
+            }
+    }
+
+    private fun Child.withDocumentId(documentId: String): Child {
+        return if (childId.isBlank()) copy(childId = documentId) else this
     }
 }

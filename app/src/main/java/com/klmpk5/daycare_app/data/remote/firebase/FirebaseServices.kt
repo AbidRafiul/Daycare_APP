@@ -4,6 +4,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.klmpk5.daycare_app.data.remote.model.ChildRemoteDto
 import com.klmpk5.daycare_app.data.remote.model.DailyScoreRemoteDto
 import com.klmpk5.daycare_app.data.remote.model.WeeklyPlanRemoteDto
+import com.klmpk5.daycare_app.data.remote.model.UserRemoteDto
 import kotlinx.coroutines.tasks.await
 
 class FirebaseService {
@@ -18,7 +19,29 @@ class FirebaseService {
             .get()
             .await()
 
-        return snapshot.documents.mapNotNull { doc ->
+        return snapshot.documents.toChildDtos()
+    }
+
+    suspend fun getChildrenByParentEmail(parentEmail: String): List<ChildRemoteDto> {
+        val snapshot = db.collection("children")
+            .whereEqualTo("parentEmail", parentEmail.trim().lowercase())
+            .get()
+            .await()
+
+        return snapshot.documents.toChildDtos()
+    }
+
+    suspend fun getChildrenForParent(parentUserId: String, parentEmail: String?): List<ChildRemoteDto> {
+        val byUid = getChildrenByParent(parentUserId)
+        if (byUid.isNotEmpty() || parentEmail.isNullOrBlank()) {
+            return byUid
+        }
+
+        return getChildrenByParentEmail(parentEmail)
+    }
+
+    private fun List<com.google.firebase.firestore.DocumentSnapshot>.toChildDtos(): List<ChildRemoteDto> {
+        return mapNotNull { doc ->
             val child = doc.toObject(ChildRemoteDto::class.java)
             child?.childId = doc.id // Otomatis tangkap ID dari dokumen Firebase
             child
@@ -76,5 +99,32 @@ class FirebaseService {
         val docRef = if (score.scoreId.isEmpty()) db.collection("daily_scores").document() else db.collection("daily_scores").document(score.scoreId)
         score.scoreId = docRef.id
         docRef.set(score).await()
+    }
+
+    // ==========================================
+    // 4. USER OPERATIONS (untuk login/register)
+    // ==========================================
+
+    suspend fun saveUserProfile(user: UserRemoteDto) {
+        db.collection("users")
+            .document(user.uid)
+            .set(user)
+            .await()
+    }
+
+    suspend fun getUserProfile(uid: String): UserRemoteDto? {
+        val document = db.collection("users")
+            .document(uid)
+            .get()
+            .await()
+
+        return document.toObject(UserRemoteDto::class.java)
+    }
+
+    suspend fun updateUserProfile(user: UserRemoteDto) {
+        db.collection("users")
+            .document(user.uid)
+            .set(user)
+            .await()
     }
 }
