@@ -6,7 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.klmpk5.daycare_app.ui.ChildDetailScreen
+import com.klmpk5.daycare_app.ui.dashboard.DashboardScreen
 import com.klmpk5.daycare_app.ui.login.ParentLoginScreen
 import com.klmpk5.daycare_app.ui.register.ParentRegisterScreen
 import com.klmpk5.daycare_app.viewModel.LoginViewModel
@@ -14,7 +14,7 @@ import com.klmpk5.daycare_app.viewModel.LoginViewModel
 private enum class AppRoute {
     Login,
     Register,
-    ChildDetail
+    Dashboard
 }
 
 @Composable
@@ -22,7 +22,6 @@ fun AppNavigation(
     loginViewModel: LoginViewModel
 ) {
     var currentRoute by remember { mutableStateOf(AppRoute.Login) }
-    var parentUidFromLogin by remember { mutableStateOf("") }
     var parentEmailFromLogin by remember { mutableStateOf("") }
 
     val loginSuccessUid = loginViewModel.loginSuccessUid
@@ -32,9 +31,8 @@ fun AppNavigation(
     LaunchedEffect(loginSuccessUid, loginSuccessEmail) {
         val uid = loginSuccessUid
         if (!uid.isNullOrBlank()) {
-            parentUidFromLogin = uid
             parentEmailFromLogin = loginSuccessEmail.orEmpty()
-            currentRoute = AppRoute.ChildDetail
+            currentRoute = AppRoute.Dashboard
         }
     }
 
@@ -71,10 +69,9 @@ fun AppNavigation(
             }
         )
 
-        AppRoute.ChildDetail -> ChildDetailScreen(
-            parentUid = parentUidFromLogin,
+        AppRoute.Dashboard -> DashboardScreen(
             parentEmail = parentEmailFromLogin,
-            onBackClick = {
+            onLogout = {
                 loginViewModel.resetState()
                 currentRoute = AppRoute.Login
             }
