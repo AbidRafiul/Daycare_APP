@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModelProvider
 import com.klmpk5.daycare_app.ui.navigation.AppNavigation
 import com.klmpk5.daycare_app.ui.theme.DaycareAppTheme
 import com.klmpk5.daycare_app.viewModel.LoginViewModel
+import com.klmpk5.daycare_app.viewModel.ProfileViewModel
+import com.klmpk5.daycare_app.viewModel.ProfileViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -17,10 +19,17 @@ class MainActivity : ComponentActivity() {
             this,
             LoginViewModel.Factory(app.userRepository)
         )[LoginViewModel::class.java]
+        val profileViewModel = ViewModelProvider(
+            this,
+            ProfileViewModelFactory(app.userRepository)
+        )[ProfileViewModel::class.java]
 
         setContent {
             DaycareAppTheme {
-                AppNavigation(loginViewModel = loginViewModel)
+                AppNavigation(
+                    loginViewModel = loginViewModel,
+                    profileViewModel = profileViewModel
+                )
             }
         }
     }
